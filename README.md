@@ -7,7 +7,7 @@ the main scripts for this course are the following:
 + population ecology script
 + community ecology script
 
-the whole code can be found in the code folder
+> the whole code can be found in the code folder
 
 ## how the exam works 📖
 + write the script in github
