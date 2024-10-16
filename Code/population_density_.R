@@ -64,3 +64,30 @@ plot(densitymap)
 
 dev.off() #one frined to clear graphs
 
+#canging colors to maps  #http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf
+cl <- colorRampPalette(c("black", "blue", "red")) (3) #esempio metto tre colori, " per i colori. tutti concatenati in c 
+plot(densitymap, col=cl)   
+
+cl <- colorRampPalette(c("black", "blue", "red")) (100) #per renderlo più smooth
+plot(densitymap, col=cl)   #non ho capito perchè questo va specificato
+
+#ESERCIZIO cambia color palette
+cl <- colorRampPalette(c("palegreen1", "darkorchid4", "darkorchid3")) (100) 
+plot(densitymap, col=cl) 
+
+#ESERCIZIO build a multiframe and plot the densitymap with two different color ramp palette next to each other 
+
+par(mfrow=c(2,1)) #for the multiframe 
+cl <- colorRampPalette(c("darkseagreen1", "bisque4", "darkorchid4")) (100) #for the colors
+
+
+par(mfrow=c(1,2)) #1 row and 2 colors
+cl <- colorRampPalette(c("darkseagreen1", "bisque4", "darkorchid4")) (100)
+plot(densitymap, col=cl) 
+clg <- colorRampPalette(c("coral4", "cornflowerblue", "cornsilk2")) (100)
+plot(densitymap, col=clg) 
+
+dev.off()  
+
+
+#i needed all of this to use packages outside R, using vector files and then coordinating them 
