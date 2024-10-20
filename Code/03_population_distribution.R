@@ -25,7 +25,7 @@ plot(rana) #let's plot
 #occurrence =1 
 #! = it will not equal to
 
-press <- rana[rana$Occurrence==1] #rana is the dataset, the elements #from rana go to occurrence and send all the dataset wher occurence = 1 select all the dataset in line with this condition. this is called press
+pres <- rana[rana$Occurrence==1] #rana is the dataset, the elements #from rana go to occurrence and send all the dataset wher occurence = 1 select all the dataset in line with this condition. this is called press
 
 #ESERCIZIO 1 plot in a multiframe the rana dataset beside the press dataset
 par(mfrow=c(1,2))
