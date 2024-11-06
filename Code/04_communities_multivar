@@ -1,0 +1,40 @@
+# Code is related to multivariate analysis in R for monitoring communities to see the relationship in space among different species
+
+# install.packages("vegan") #numerical ecology
+library(vegan)
+
+data(dune) 
+dune
+head(dune) # View(dune) #just the first 6 line?
+View(dune) #it opens a graph
+
+multivar <- decorana(dune) #analisys, resulte of the function of decorana will be assigne to something called multivar
+multivar 
+
+#copy paste from axis lengths
+dca1 <- 3.7004  
+dca2 <- 3.1166
+dca3 <- 1.30055
+dca4 <- 1.47888
+
+#how to calculate the persentage
+total = dca1 + dca2 + dca3 + dca4
+total 
+
+#proportions, copy paste from 
+prop1 = dca1/total
+prop2 = dca2/total
+prop3 = dca3/total
+prop4 = dca4/total
+
+#percentage 
+perc1 = prop1*100
+perc2 = prop2*100
+perc3 = prop3*100
+perc4 = prop4*100
+
+#if i pass from the original table to a graph in 2 dimentions i need to know all the information about the lenght and stuff
+#whole amount of variability in percentage
+perc1+perc2 #first two axis explain 715 of variability
+
+plot(multivarial)
