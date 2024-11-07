@@ -1,0 +1,47 @@
+#code to estimate the temporal overlap between species 
+
+install.packages('overlap')
+library(overlap)
+
+data(kerinci)
+
+#EXERCISE, show the first six row of kerici
+head(kerinci) #!!!!! first six row
+kerinci #the whole thing i guess
+
+summary(kerinci) #to have statistic of every single field
+
+#let's create a new fields that is the time in 
+kerinci$Timecirc <- kerinci$Time * 2 * pi #$ to link #we can create a new column or create an object, so we give it a name <- #if you don't connect with $ you just have the new object, if you $connect you have a new column 
+head(kerinci) #now if you do this you can also see the circular time 
+
+#creating a new dataset with only the tiger data
+
+head(kerinci) #to see the name of the species that is Sps, i can also do:
+names(kerinci)
+
+tiger <- kerinci[kerinci$Sps=='tiger',] #inside the dataset we are only going to select the datasect containing tiger as species. Sps inside kerinci $, should be equal == "name" then , to close the quiry
+
+#tigertime #set the time for the tiger, in the column is called Timecirc
+tigertime <- tiger$Timecirc
+tigertime
+
+#we can now do a graph about density plot. density plot -> the black line that stay over the top of the graph
+densityPlot(tigertime) #important the capital P
+
+#let's do the same with macaque
+#EXESCISE select the  data for the macaque in the kerinci set and assigne them to a new object
+macque <- kerinci[kerinci$Sps=='macaque',]
+head(macaque)
+
+#EXERCISE select the time and make density plot
+macaquetime <- macaque$Timecirc
+macaquetime
+
+densityPlot(macaquetime)
+
+#now let's overlap the two plot 
+overlapPlot(timetig, timemac)
+
+
+
