@@ -41,7 +41,15 @@ macaquetime
 densityPlot(macaquetime)
 
 #now let's overlap the two plot 
-overlapPlot(timetig, timemac)
+overlapPlot(timetig, timemac) #overlap is an already existing funcion 
 
+
+
+# ---- sql (=sequel)  
+
+macaque <- kerinci[kerinci$Sps=='macaque']
+summary(macaque) #now the species is only macaque
+macaque <- kerinci[kerinci$Sps!='macaque']
+summary(macaque) #now i have everything exept macaque
 
 
