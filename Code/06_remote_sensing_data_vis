@@ -1,0 +1,9 @@
+#code for managing and analysing remote sensed data
+
+install.packages('devtools')
+library('devtools')
+
+install_github("ducciorocchini/imageRy")  # from devtools
+library('imageRy')
+
+im.list() #usato per controllare che imageRy funzionasse
