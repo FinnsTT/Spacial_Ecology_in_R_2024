@@ -3,7 +3,45 @@
 install.packages('devtools')
 library('devtools')
 
-install_github("ducciorocchini/imageRy")  # from devtools
+install_github("ducciorocchini/imageRy")  # from devtools, it's a function 
 library('imageRy')
+library('terra')
 
+#listing data inside imagery
 im.list() #usato per controllare che imageRy funzionasse
+# "sentinel.dolomites.b2.tif"  #cool imagine #check what B2 means 
+
+b2 <- im.import("sentinel.dolomites.b2.tif")    #importing data #about reflected light. plants reflect
+b2
+cl <- colorRampPalette(c('black','grey','bisque'))(100)
+plot(b2, col=cl)
+
+# ESERCIZIO import b3 and plot it with the previus palette #rocks are white because they are reflecting all of the colors
+b3 <- im.import("sentinel.dolomites.b3.tif")    #importing data
+b3
+plot(b3, col=cl)
+
+#number 4, maybe the most smooth is the blue one but they are very related to each other 
+b4 <- im.import("sentinel.dolomites.b4.tif")    #importing data
+b4
+plot(b4, col=cl)
+
+#b5,6,7 are not present because of the revolution
+
+#number 8, near infrared -> closer to the visible part, striktly related to vegetation 
+b8 <- im.import("sentinel.dolomites.b8.tif")    #importing data
+b8
+plot(b8, col=cl)
+
+#multiframe
+par(mfrow=c(2,2))
+plot(b2, col=cl)
+plot(b3, col=cl)
+plot(b4, col=cl)
+plot(b8, col=cl)
+
+# stack images, same results without multiframe
+sentstack <- c(b2, b3, b4, b8)
+dev.off() # it closes devices
+plot(sentstack, col=cl)
+
