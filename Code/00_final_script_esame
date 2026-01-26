@@ -1,1 +1,574 @@
-help
+# TEMPORAL ANALYSIS OF CARR FIRE - CALIFORNIA (2017-2025)
+
+# Project: Monitoring fire impact and vegetation recovery
+# Analysis dates:
+# - September 2017: Pre-fire (autumn)
+# - July 2018: Pre-fire (summer)
+# - October 2018: Post-fire immediate (autumn)
+# - June 2019: Post-fire 1 year (spring/summer)
+# - May 2025: Long-term recovery (spring)
+
+
+
+# 1. SETUP - Package installation and loading
+
+
+# Install packages (only first time, then comment out)
+# install.packages("terra")
+# install.packages("viridis")
+# install.packages("ggplot2")
+# install.packages("gridExtra")
+# install.packages("RStoolbox")
+
+# Load libraries
+library(terra)
+library(viridis)
+library(ggplot2)
+library(gridExtra)
+library(RStoolbox)
+
+# 2. SET WORKING DIRECTORY AND DATA IMPORT
+
+# Set working directory (change backslash to forward slash)
+setwd("C:/Users/Dell/Desktop/Progetto Incendio")
+
+# Import September 2017 image (pre-fire autumn)
+# Enter specific folder for this date
+setwd("C:/Users/Dell/Desktop/Progetto Incendio/LC08_L2SP_045033_20170925_20200903_02_T1")
+rlist_set2017 <- list.files(pattern="SR_B[1-7].TIF$")  # Select only bands 1-7
+import_set2017 <- lapply(rlist_set2017, rast)  # Import each band as raster
+carrfire_set2017 <- rast(import_set2017)  # Stack all bands together
+carrfire_set2017  # Check the stack
+
+# Return to main folder
+setwd("C:/Users/Dell/Desktop/Progetto Incendio")
+
+# Import July 2018 image (pre-fire summer)
+setwd("C:/Users/Dell/Desktop/Progetto Incendio/LC08_L2SP_045033_20180710_20200831_02_T1")
+rlist_lug2018 <- list.files(pattern="SR_B[1-7].TIF$")
+import_lug2018 <- lapply(rlist_lug2018, rast)
+carrfire_lug2018 <- rast(import_lug2018)
+carrfire_lug2018
+
+setwd("C:/Users/Dell/Desktop/Progetto Incendio")
+
+# Import October 2018 image (post-fire immediate)
+setwd("C:/Users/Dell/Desktop/Progetto Incendio/LC08_L2SP_045033_20181030_20200830_02_T1")
+rlist_ott2018 <- list.files(pattern="SR_B[1-7].TIF$")
+import_ott2018 <- lapply(rlist_ott2018, rast)
+carrfire_ott2018 <- rast(import_ott2018)
+carrfire_ott2018
+
+setwd("C:/Users/Dell/Desktop/Progetto Incendio")
+
+# Import June 2019 image (post-fire 1 year recovery)
+setwd("C:/Users/Dell/Desktop/Progetto Incendio/LC08_L2SP_045033_20190611_20200828_02_T1")
+rlist_giu2019 <- list.files(pattern="SR_B[1-7].TIF$")
+import_giu2019 <- lapply(rlist_giu2019, rast)
+carrfire_giu2019 <- rast(import_giu2019)
+carrfire_giu2019
+
+setwd("C:/Users/Dell/Desktop/Progetto Incendio")
+
+# Import May 2025 image (long-term recovery)
+setwd("C:/Users/Dell/Desktop/Progetto Incendio/LC09_L2SP_045033_20250518_20250519_02_T1")
+rlist_mag2025 <- list.files(pattern="SR_B[1-7].TIF$")
+import_mag2025 <- lapply(rlist_mag2025, rast)
+carrfire_mag2025 <- rast(import_mag2025)
+carrfire_mag2025
+
+# Return to main folder
+setwd("C:/Users/Dell/Desktop/Progetto Incendio")
+
+# 3. RGB VISUALIZATION - NATURAL COLORS
+
+# Plot all images in natural colors
+# R=Band4 (Red), G=Band3 (Green), B=Band2 (Blue)
+# This shows how the area looks to human eye
+par(mfrow=c(2,3))
+plotRGB(carrfire_set2017, r=4, g=3, b=2, stretch="lin", main="Sep 2017 - Pre-fire")
+plotRGB(carrfire_lug2018, r=4, g=3, b=2, stretch="lin", main="Jul 2018 - Pre-fire")
+plotRGB(carrfire_ott2018, r=4, g=3, b=2, stretch="lin", main="Oct 2018 - Post-fire")
+plotRGB(carrfire_giu2019, r=4, g=3, b=2, stretch="lin", main="Jun 2019 - Recovery 1yr")
+plotRGB(carrfire_mag2025, r=4, g=3, b=2, stretch="lin", main="May 2025 - Recovery 7yr")
+
+dev.off()  # Close the plot window
+
+# 4. RGB VISUALIZATION - FALSE COLOR (NIR)
+
+# Plot all images in false color NIR
+# R=Band5 (NIR), G=Band4 (Red), B=Band3 (Green)
+# Healthy vegetation appears RED (high NIR reflectance)
+# Burned areas appear BROWN/GRAY (low NIR reflectance)
+# Water appears BLACK (absorbs NIR)
+par(mfrow=c(2,3))
+plotRGB(carrfire_set2017, r=5, g=4, b=3, stretch="lin", main="Sep 2017 - Pre-fire")
+plotRGB(carrfire_lug2018, r=5, g=4, b=3, stretch="lin", main="Jul 2018 - Pre-fire")
+plotRGB(carrfire_ott2018, r=5, g=4, b=3, stretch="lin", main="Oct 2018 - Post-fire")
+plotRGB(carrfire_giu2019, r=5, g=4, b=3, stretch="lin", main="Jun 2019 - Recovery 1yr")
+plotRGB(carrfire_mag2025, r=5, g=4, b=3, stretch="lin", main="May 2025 - Recovery 7yr")
+
+dev.off()
+
+# 5. CALCULATE NDVI (Normalized Difference Vegetation Index)
+
+# NDVI formula: (NIR - Red) / (NIR + Red)
+# For Landsat 8/9: NIR = Band5, Red = Band4
+# NDVI ranges from -1 to 1
+# High values (>0.4) = healthy vegetation
+# Medium values (0.2-0.4) = sparse vegetation
+# Low values (<0.2) = burned area, bare soil, rocks
+
+# Calculate NDVI for September 2017
+ndvi_set2017 <- (carrfire_set2017[[5]] - carrfire_set2017[[4]]) / 
+                (carrfire_set2017[[5]] + carrfire_set2017[[4]])
+
+# Calculate NDVI for July 2018
+ndvi_lug2018 <- (carrfire_lug2018[[5]] - carrfire_lug2018[[4]]) / 
+                (carrfire_lug2018[[5]] + carrfire_lug2018[[4]])
+
+# Calculate NDVI for October 2018
+ndvi_ott2018 <- (carrfire_ott2018[[5]] - carrfire_ott2018[[4]]) / 
+                (carrfire_ott2018[[5]] + carrfire_ott2018[[4]])
+
+# Calculate NDVI for June 2019
+ndvi_giu2019 <- (carrfire_giu2019[[5]] - carrfire_giu2019[[4]]) / 
+                (carrfire_giu2019[[5]] + carrfire_giu2019[[4]])
+
+# Calculate NDVI for May 2025
+ndvi_mag2025 <- (carrfire_mag2025[[5]] - carrfire_mag2025[[4]]) / 
+                (carrfire_mag2025[[5]] + carrfire_mag2025[[4]])
+
+# 6. VISUALIZE NDVI
+
+# Plot all NDVI maps using viridis color palette
+# Yellow/green = high NDVI (healthy vegetation)
+# Purple/blue = low NDVI (burned area, bare soil)
+par(mfrow=c(2,3))
+plot(ndvi_set2017, col=viridis(100, option="D"), main="NDVI Sep 2017 - Pre-fire")
+plot(ndvi_lug2018, col=viridis(100, option="D"), main="NDVI Jul 2018 - Pre-fire")
+plot(ndvi_ott2018, col=viridis(100, option="D"), main="NDVI Oct 2018 - Post-fire")
+plot(ndvi_giu2019, col=viridis(100, option="D"), main="NDVI Jun 2019 - Recovery 1yr")
+plot(ndvi_mag2025, col=viridis(100, option="D"), main="NDVI May 2025 - Recovery 7yr")
+
+dev.off()
+
+# 7. CALCULATE NBR (Normalized Burn Ratio) - FIRE-SPECIFIC INDEX
+
+# NBR formula: (NIR - SWIR2) / (NIR + SWIR2)
+# For Landsat 8/9: NIR = Band5, SWIR2 = Band7
+# NBR is specifically designed to detect burned areas
+# High NBR = healthy vegetation
+# Low NBR = burned area
+# More sensitive to fire damage than NDVI
+
+# Calculate NBR for September 2017
+nbr_set2017 <- (carrfire_set2017[[5]] - carrfire_set2017[[7]]) / 
+               (carrfire_set2017[[5]] + carrfire_set2017[[7]])
+
+# Calculate NBR for July 2018
+nbr_lug2018 <- (carrfire_lug2018[[5]] - carrfire_lug2018[[7]]) / 
+               (carrfire_lug2018[[5]] + carrfire_lug2018[[7]])
+
+# Calculate NBR for October 2018
+nbr_ott2018 <- (carrfire_ott2018[[5]] - carrfire_ott2018[[7]]) / 
+               (carrfire_ott2018[[5]] + carrfire_ott2018[[7]])
+
+# Calculate NBR for June 2019
+nbr_giu2019 <- (carrfire_giu2019[[5]] - carrfire_giu2019[[7]]) / 
+               (carrfire_giu2019[[5]] + carrfire_giu2019[[7]])
+
+# Calculate NBR for May 2025
+nbr_mag2025 <- (carrfire_mag2025[[5]] - carrfire_mag2025[[7]]) / 
+               (carrfire_mag2025[[5]] + carrfire_mag2025[[7]])
+
+# Visualize NBR maps using viridis plasma palette
+par(mfrow=c(2,3))
+plot(nbr_set2017, col=viridis(100, option="C"), main="NBR Sep 2017")
+plot(nbr_lug2018, col=viridis(100, option="C"), main="NBR Jul 2018")
+plot(nbr_ott2018, col=viridis(100, option="C"), main="NBR Oct 2018")
+plot(nbr_giu2019, col=viridis(100, option="C"), main="NBR Jun 2019")
+plot(nbr_mag2025, col=viridis(100, option="C"), main="NBR May 2025")
+
+dev.off()
+
+# 8. CALCULATE dNBR (differenced NBR) - BURN SEVERITY
+
+# dNBR = NBR pre-fire - NBR post-fire
+# High dNBR values indicate high fire severity
+# This is the standard method used by USGS to assess burn severity
+
+# Calculate immediate fire impact (Sep 2017 - Oct 2018)
+dnbr_immediato <- nbr_set2017 - nbr_ott2018
+
+# Visualize burn severity map
+# Red/yellow = high severity burn
+# Blue/purple = low severity or unburned
+par(mfrow=c(1,1))
+plot(dnbr_immediato, col=viridis(100, option="A"), 
+     main="dNBR - Burn Severity Map\n(Sep 2017 - Oct 2018)")
+
+# USGS Burn Severity Classification:
+# dNBR > 0.66 = High severity
+# 0.44 - 0.66 = Moderate-high severity
+# 0.27 - 0.44 = Moderate-low severity
+# 0.1 - 0.27 = Low severity
+# < 0.1 = Unburned or increased vegetation
+
+dev.off()
+
+# 9. CALCULATE NDVI DIFFERENCES - TEMPORAL ANALYSIS
+
+# Calculate NDVI difference: immediate fire impact
+# Positive values = vegetation loss
+# Negative values = vegetation gain
+ndvi_diff_impatto <- ndvi_set2017 - ndvi_ott2018
+
+# Calculate NDVI difference: first year recovery
+# Negative values indicate vegetation recovery
+ndvi_diff_recovery1 <- ndvi_giu2019 - ndvi_ott2018
+
+# Calculate NDVI difference: total long-term recovery
+# Shows how much vegetation recovered from post-fire minimum
+ndvi_diff_recovery_totale <- ndvi_mag2025 - ndvi_ott2018
+
+# Calculate NDVI difference: long-term comparison
+# Compares current state (2025) to original pre-fire state (2017)
+ndvi_diff_longterm <- ndvi_mag2025 - ndvi_set2017
+
+# Visualize all NDVI differences
+par(mfrow=c(2,2))
+plot(ndvi_diff_impatto, col=viridis(100, option="B"), 
+     main="NDVI Difference: Fire Impact\n(Sep 2017 - Oct 2018)")
+plot(ndvi_diff_recovery1, col=viridis(100, option="D"), 
+     main="NDVI Difference: 1-Year Recovery\n(Jun 2019 - Oct 2018)")
+plot(ndvi_diff_recovery_totale, col=viridis(100, option="D"), 
+     main="NDVI Difference: Total Recovery\n(May 2025 - Oct 2018)")
+plot(ndvi_diff_longterm, col=viridis(100, option="E"), 
+     main="NDVI Difference: Long-term Change\n(May 2025 - Sep 2017)")
+
+dev.off()
+
+# 10. UNSUPERVISED CLASSIFICATION
+
+# Perform unsupervised classification into 3 classes
+# Expected classes: healthy vegetation, sparse vegetation/burned, bare soil
+# Algorithm automatically groups pixels with similar spectral properties
+
+# Classification for September 2017
+class_set2017 <- unsuperClass(carrfire_set2017, nClasses=3)
+
+# Classification for July 2018
+class_lug2018 <- unsuperClass(carrfire_lug2018, nClasses=3)
+
+# Classification for October 2018 (post-fire)
+class_ott2018 <- unsuperClass(carrfire_ott2018, nClasses=3)
+
+# Classification for June 2019
+class_giu2019 <- unsuperClass(carrfire_giu2019, nClasses=3)
+
+# Classification for May 2025
+class_mag2025 <- unsuperClass(carrfire_mag2025, nClasses=3)
+
+# Visualize all classifications
+par(mfrow=c(2,3))
+plot(class_set2017$map, col=viridis(3, option="E"), main="Classification Sep 2017")
+plot(class_lug2018$map, col=viridis(3, option="E"), main="Classification Jul 2018")
+plot(class_ott2018$map, col=viridis(3, option="E"), main="Classification Oct 2018")
+plot(class_giu2019$map, col=viridis(3, option="E"), main="Classification Jun 2019")
+plot(class_mag2025$map, col=viridis(3, option="E"), main="Classification May 2025")
+
+dev.off()
+
+# 11. CALCULATE FREQUENCIES AND PERCENTAGES
+
+# Calculate pixel frequency for each class in each year
+# This tells us how many pixels belong to each class
+
+# Frequencies for September 2017
+freq_set2017 <- freq(class_set2017$map)
+freq_set2017
+
+# Frequencies for July 2018
+freq_lug2018 <- freq(class_lug2018$map)
+freq_lug2018
+
+# Frequencies for October 2018
+freq_ott2018 <- freq(class_ott2018$map)
+freq_ott2018
+
+# Frequencies for June 2019
+freq_giu2019 <- freq(class_giu2019$map)
+freq_giu2019
+
+# Frequencies for May 2025
+freq_mag2025 <- freq(class_mag2025$map)
+freq_mag2025
+
+# Calculate total number of pixels for each image
+tot_set2017 <- ncell(class_set2017$map)
+tot_lug2018 <- ncell(class_lug2018$map)
+tot_ott2018 <- ncell(class_ott2018$map)
+tot_giu2019 <- ncell(class_giu2019$map)
+tot_mag2025 <- ncell(class_mag2025$map)
+
+# Calculate percentages for each class in each year
+perc_set2017 <- freq_set2017 * 100 / tot_set2017
+perc_lug2018 <- freq_lug2018 * 100 / tot_lug2018
+perc_ott2018 <- freq_ott2018 * 100 / tot_ott2018
+perc_giu2019 <- freq_giu2019 * 100 / tot_giu2019
+perc_mag2025 <- freq_mag2025 * 100 / tot_mag2025
+
+# View percentages for each year
+perc_set2017
+perc_lug2018
+perc_ott2018
+perc_giu2019
+perc_mag2025
+
+# 12. CALCULATE VEGETATION PERCENTAGES USING NDVI THRESHOLDS
+
+# Alternative method: classify based on NDVI values
+# NDVI > 0.4 = healthy vegetation
+# 0.2 < NDVI <= 0.4 = sparse vegetation
+# NDVI <= 0.2 = burned/bare soil
+
+# Function to calculate vegetation percentages from NDVI
+calc_veg_perc <- function(ndvi_layer) {
+  # Count pixels in each category
+  healthy <- sum(values(ndvi_layer) > 0.4, na.rm=TRUE)
+  sparse <- sum(values(ndvi_layer) > 0.2 & values(ndvi_layer) <= 0.4, na.rm=TRUE)
+  burned <- sum(values(ndvi_layer) <= 0.2, na.rm=TRUE)
+  
+  # Calculate total pixels
+  total <- healthy + sparse + burned
+  
+  # Calculate percentages
+  perc_healthy <- (healthy / total) * 100
+  perc_sparse <- (sparse / total) * 100
+  perc_burned <- (burned / total) * 100
+  
+  # Return results as data frame
+  return(data.frame(
+    Healthy = perc_healthy,
+    Sparse = perc_sparse,
+    Burned = perc_burned
+  ))
+}
+
+# Calculate vegetation percentages for all dates
+veg_perc_set2017 <- calc_veg_perc(ndvi_set2017)
+veg_perc_lug2018 <- calc_veg_perc(ndvi_lug2018)
+veg_perc_ott2018 <- calc_veg_perc(ndvi_ott2018)
+veg_perc_giu2019 <- calc_veg_perc(ndvi_giu2019)
+veg_perc_mag2025 <- calc_veg_perc(ndvi_mag2025)
+
+# View results
+veg_perc_set2017
+veg_perc_lug2018
+veg_perc_ott2018
+veg_perc_giu2019
+veg_perc_mag2025
+
+# 13. CREATE DATAFRAMES AND PLOTS WITH GGPLOT2
+
+# Create dataframe with vegetation percentages for all dates
+# This will be used for plotting temporal trends
+
+# Extract values from each year (adjust these based on your actual results)
+# YOU NEED TO UPDATE THESE VALUES after running section 12
+Years <- c("Sep 2017", "Jul 2018", "Oct 2018", "Jun 2019", "May 2025")
+Healthy_Veg <- c(
+  veg_perc_set2017$Healthy,
+  veg_perc_lug2018$Healthy,
+  veg_perc_ott2018$Healthy,
+  veg_perc_giu2019$Healthy,
+  veg_perc_mag2025$Healthy
+)
+Sparse_Veg <- c(
+  veg_perc_set2017$Sparse,
+  veg_perc_lug2018$Sparse,
+  veg_perc_ott2018$Sparse,
+  veg_perc_giu2019$Sparse,
+  veg_perc_mag2025$Sparse
+)
+Burned_Bare <- c(
+  veg_perc_set2017$Burned,
+  veg_perc_lug2018$Burned,
+  veg_perc_ott2018$Burned,
+  veg_perc_giu2019$Burned,
+  veg_perc_mag2025$Burned
+)
+
+# Create main dataframe
+veg_temporal <- data.frame(Years, Healthy_Veg, Sparse_Veg, Burned_Bare)
+View(veg_temporal)
+
+# Create dataframe for stacked/grouped bar chart
+# Each row represents one category in one year
+Year <- rep(c("Sep 2017", "Jul 2018", "Oct 2018", "Jun 2019", "May 2025"), each=3)
+Percentage <- c(
+  veg_perc_set2017$Healthy, veg_perc_set2017$Sparse, veg_perc_set2017$Burned,
+  veg_perc_lug2018$Healthy, veg_perc_lug2018$Sparse, veg_perc_lug2018$Burned,
+  veg_perc_ott2018$Healthy, veg_perc_ott2018$Sparse, veg_perc_ott2018$Burned,
+  veg_perc_giu2019$Healthy, veg_perc_giu2019$Sparse, veg_perc_giu2019$Burned,
+  veg_perc_mag2025$Healthy, veg_perc_mag2025$Sparse, veg_perc_mag2025$Burned
+)
+Cover_Type <- rep(c("Healthy Vegetation", "Sparse Vegetation", "Burned/Bare Soil"), 5)
+
+# Create dataframe for ggplot
+veg_temporal_long <- data.frame(Year, Percentage, Cover_Type)
+View(veg_temporal_long)
+
+# Define custom colors using viridis palette
+cover_colors <- c(
+  "Healthy Vegetation" = viridis(3, option="D")[3],    # Yellow-green
+  "Sparse Vegetation" = viridis(3, option="D")[2],     # Green-blue
+  "Burned/Bare Soil" = viridis(3, option="D")[1]       # Dark purple
+)
+
+# Create grouped bar chart showing vegetation change over time
+# Bars are grouped by year, colored by vegetation type
+ggplot(veg_temporal_long, aes(x=Year, y=Percentage, fill=Cover_Type)) +
+  geom_bar(stat="identity", position="dodge") +
+  scale_fill_manual(values=cover_colors) +
+  labs(
+    title="Vegetation Cover Change Over Time - Carr Fire Analysis",
+    subtitle="Based on NDVI classification",
+    x="Date",
+    y="Percentage (%)",
+    fill="Cover Type"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust=0.5, size=14, face="bold"),
+    plot.subtitle = element_text(hjust=0.5, size=10),
+    axis.text.x = element_text(angle=45, hjust=1)
+  )
+
+# Create stacked bar chart
+# Shows composition of each year as 100% stacked bars
+ggplot(veg_temporal_long, aes(x=Year, y=Percentage, fill=Cover_Type)) +
+  geom_bar(stat="identity", position="stack") +
+  scale_fill_manual(values=cover_colors) +
+  labs(
+    title="Vegetation Cover Composition - Carr Fire Analysis",
+    subtitle="Stacked percentages by date",
+    x="Date",
+    y="Percentage (%)",
+    fill="Cover Type"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust=0.5, size=14, face="bold"),
+    plot.subtitle = element_text(hjust=0.5, size=10),
+    axis.text.x = element_text(angle=45, hjust=1)
+  )
+
+# Create line plot showing trend over time
+# Useful to see recovery trajectory
+ggplot(veg_temporal_long, aes(x=Year, y=Percentage, color=Cover_Type, group=Cover_Type)) +
+  geom_line(size=1.2) +
+  geom_point(size=3) +
+  scale_color_manual(values=cover_colors) +
+  labs(
+    title="Vegetation Recovery Trend - Carr Fire",
+    subtitle="Temporal evolution of cover types",
+    x="Date",
+    y="Percentage (%)",
+    color="Cover Type"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust=0.5, size=14, face="bold"),
+    plot.subtitle = element_text(hjust=0.5, size=10),
+    axis.text.x = element_text(angle=45, hjust=1)
+  )
+
+# Create individual bar charts for healthy vegetation only
+# Shows clear trajectory of vegetation recovery
+healthy_only <- veg_temporal_long[veg_temporal_long$Cover_Type == "Healthy Vegetation", ]
+
+ggplot(healthy_only, aes(x=Year, y=Percentage)) +
+  geom_bar(stat="identity", fill=viridis(1, option="D")) +
+  labs(
+    title="Healthy Vegetation Recovery - Carr Fire",
+    subtitle="Percentage of pixels with NDVI > 0.4",
+    x="Date",
+    y="Percentage (%)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust=0.5, size=14, face="bold"),
+    plot.subtitle = element_text(hjust=0.5, size=10),
+    axis.text.x = element_text(angle=45, hjust=1)
+  ) +
+  ylim(0, 100)
+
+# 14. PCA ANALYSIS AND VARIABILITY (OPTIONAL BUT IMPRESSIVE)
+
+# Principal Component Analysis reduces multispectral data to main components
+# PC1 typically explains most of the variance in the system
+# Useful to understand overall landscape heterogeneity
+
+# Resample images to lower resolution for faster processing
+# factor=10 means we aggregate 10x10 pixels into 1 pixel
+carrfire_set2017_res <- aggregate(carrfire_set2017, fact=10)
+carrfire_ott2018_res <- aggregate(carrfire_ott2018, fact=10)
+carrfire_mag2025_res <- aggregate(carrfire_mag2025, fact=10)
+
+# Perform PCA on key dates
+# Pre-fire (September 2017)
+pca_set2017 <- rasterPCA(carrfire_set2017_res)
+summary(pca_set2017$model)  # Shows how much variance each PC explains
+
+# Post-fire (October 2018)
+pca_ott2018 <- rasterPCA(carrfire_ott2018_res)
+summary(pca_ott2018$model)
+
+# Long-term recovery (May 2025)
+pca_mag2025 <- rasterPCA(carrfire_mag2025_res)
+summary(pca_mag2025$model)
+
+# Extract PC1 (first principal component) for each date
+pc1_set2017 <- pca_set2017$map$PC1
+pc1_ott2018 <- pca_ott2018$map$PC1
+pc1_mag2025 <- pca_mag2025$map$PC1
+
+# Plot PC1 for each date using viridis plasma palette
+par(mfrow=c(1,3))
+plot(pc1_set2017, col=viridis(100, option="C"), main="PC1 Sep 2017")
+plot(pc1_ott2018, col=viridis(100, option="C"), main="PC1 Oct 2018")
+plot(pc1_mag2025, col=viridis(100, option="C"), main="PC1 May 2025")
+
+dev.off()
+
+# Calculate spatial variability using moving window
+# 3x3 window calculates standard deviation for each pixel's neighborhood
+# High SD = high local heterogeneity (edges, transitions between cover types)
+# Low SD = homogeneous areas
+
+# Calculate variability for September 2017
+sd_pc1_set2017 <- focal(pc1_set2017, matrix(1/9, 3, 3), fun=sd)
+
+# Calculate variability for October 2018
+sd_pc1_ott2018 <- focal(pc1_ott2018, matrix(1/9, 3, 3), fun=sd)
+
+# Calculate variability for May 2025
+sd_pc1_mag2025 <- focal(pc1_mag2025, matrix(1/9, 3, 3), fun=sd)
+
+# Plot spatial variability using viridis inferno palette
+# Yellow = high variability (heterogeneous landscape, burn edges)
+# Purple = low variability (homogeneous areas)
+par(mfrow=c(1,3))
+plot(sd_pc1_set2017, col=viridis(100, option="B"), 
+     main="Variability Sep 2017\nPre-fire")
+plot(sd_pc1_ott2018, col=viridis(100, option="B"), 
+     main="Variability Oct 2018\nPost-fire")
+plot(sd_pc1_mag2025, col=viridis(100, option="B"), 
+     main="Variability May 2025\nRecovery")
+
+dev.off()
+
+# Interpretation of variability maps:
+# - Pre-fire: moderate variability at vegetation-urban boundaries
