@@ -1,0 +1,498 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usetheme{Copenhagen}
+\usecolortheme{seahorse}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\lstset{
+    language=R,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    stepnumber=1,
+    numbersep=5pt,
+    backgroundcolor=\color{white},
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    frame=single,
+    rulecolor=\color{black},
+    tabsize=2,
+    breaklines=true,
+    breakatwhitespace=false,
+}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+\title{Temporal Analysis of Carr Fire Impact and Vegetation Recovery}
+\subtitle{California, USA (2017-2025)}
+\author{Bissoni Sofia}
+\institute{
+    Spatial Ecology in R \\
+    Academic Year 2024/2025 \\
+    Prof. Duccio Rocchini
+}
+\date{February 4, 2026}
+
+\begin{document}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\begin{frame}{Outline}
+    \tableofcontents
+\end{frame}
+
+\section{Introduction}
+
+\begin{frame}{The Carr Fire Event}
+    
+    \begin{itemize}
+        \item \textbf{What:} Wildfire in Shasta County, Northern California
+        \item \textbf{When:} July 23 -- August 30, 2018
+        \item \textbf{Scale:} Burned approximately 229,651 acres (93,000 hectares)
+        \item \textbf{Impact:} One of California's most destructive fires
+        \item \textbf{Study objective:} Monitor fire impact and long-term vegetation recovery using satellite remote sensing
+    \end{itemize}
+    
+\end{frame}
+
+\section{Data and Methods}
+
+\begin{frame}{Data Sources}
+    
+    \begin{block}{Satellite Data}
+        \begin{itemize}
+            \item \textbf{Source:} Landsat 8 (2017-2019) and Landsat 9 (2025)
+            \item \textbf{Spatial resolution:} 30 meters
+            \item \textbf{Bands used:} B2 (Blue), B3 (Green), B4 (Red), B5 (NIR), B7 (SWIR2)
+        \end{itemize}
+    \end{block}
+    
+    \begin{block}{Spectral Indices}
+        \begin{itemize}
+            \item \textbf{NDVI} = (NIR - Red) / (NIR + Red) \hfill \textit{Vegetation health}
+            \item \textbf{NBR} = (NIR - SWIR2) / (NIR + SWIR2) \hfill \textit{Burn detection}
+            \item \textbf{dNBR} = NBR\textsubscript{pre} - NBR\textsubscript{post} \hfill \textit{Burn severity (USGS)}
+        \end{itemize}
+    \end{block}
+    
+\end{frame}
+
+\begin{frame}{Analysis Methods}
+    
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{Techniques Applied:}
+            \begin{itemize}
+                \item Temporal comparison
+                \item Change detection
+                \item Unsupervised classification (3 classes)
+                \item Principal Component Analysis
+                \item Spatial variability analysis
+            \end{itemize}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \textbf{R Packages Used:}
+            \begin{itemize}
+                \item \texttt{terra} -- raster manipulation
+                \item \texttt{RStoolbox} -- classification, PCA
+                \item \texttt{viridis} -- color palettes
+                \item \texttt{ggplot2} -- visualization
+            \end{itemize}
+        \end{column}
+    \end{columns}
+    
+\end{frame}
+
+\begin{frame}[fragile]{R Workflow - Index Calculation}
+    
+    \textbf{NDVI calculation:}
+    
+    \begin{lstlisting}
+# NDVI = (NIR - Red) / (NIR + Red)
+# For Landsat: NIR = Band 5, Red = Band 4
+
+ndvi <- (carrfire[[5]] - carrfire[[4]]) / 
+        (carrfire[[5]] + carrfire[[4]])
+    \end{lstlisting}
+    
+    \vspace{0.5cm}
+    
+    \textbf{NBR calculation:}
+    
+    \begin{lstlisting}
+# NBR = (NIR - SWIR2) / (NIR + SWIR2)
+# For Landsat: NIR = Band 5, SWIR2 = Band 7
+
+nbr <- (carrfire[[5]] - carrfire[[7]]) / 
+       (carrfire[[5]] + carrfire[[7]])
+    \end{lstlisting}
+    
+\end{frame}
+
+\begin{frame}[fragile]{R Workflow - Image Alignment}
+    
+    \textbf{Problem:} Images from different dates had slightly different extents
+    
+    \vspace{0.3cm}
+    
+    \textbf{Solution:} Resample all images to match reference date
+    
+    \begin{lstlisting}
+# Resample all dates to match Sep 2017 extent
+ndvi_lug2018_res <- resample(ndvi_lug2018, ndvi_set2017, 
+                              method="bilinear")
+ndvi_ott2018_res <- resample(ndvi_ott2018, ndvi_set2017, 
+                              method="bilinear")
+
+# Now can perform raster algebra
+ndvi_diff <- ndvi_set2017 - ndvi_ott2018_res
+    \end{lstlisting}
+    
+    \vspace{0.3cm}
+    \small{This was essential for temporal change detection.}
+    
+\end{frame}
+
+\section{Results - Visual Analysis}
+
+\begin{frame}{Study Area - Natural Colors}
+    \centering
+    \includegraphics[height=0.75\textheight]{plots_presentation/slide06_rgb_natural.png}
+    
+    \vspace{0.3cm}
+    \tiny{RGB composite (Red-Green-Blue bands). Colors as seen by human eye.}
+\end{frame}
+
+\begin{frame}{False Color Composite - Vegetation Enhancement}
+    \centering
+    \includegraphics[height=0.70\textheight]{plots_presentation/slide07_rgb_falsecolor.png}
+    
+    \vspace{0.2cm}
+    \tiny{False color composite (NIR-Red-Green). Healthy vegetation appears RED, burned areas appear BROWN/GRAY.}
+    
+    \vspace{0.2cm}
+    \small{\textbf{Key observation:} October 2018 shows significant reduction in red tones (vegetation loss).}
+\end{frame}
+
+\begin{frame}{NDVI Maps - Vegetation Health Indicator}
+    \centering
+    \includegraphics[height=0.75\textheight]{plots_presentation/slide08_ndvi_maps.png}
+    
+    \vspace{0.3cm}
+    \tiny{NDVI ranges from -1 to 1. High values (yellow/green) = healthy vegetation. Low values (purple/blue) = burned/bare soil.}
+\end{frame}
+
+\begin{frame}{NBR Maps - Fire-Specific Index}
+    \centering
+    \includegraphics[height=0.75\textheight]{plots_presentation/slide09_nbr_maps.png}
+    
+    \vspace{0.3cm}
+    \tiny{NBR is specifically designed for burn detection using SWIR band sensitive to water content.}
+\end{frame}
+
+\begin{frame}{Burn Severity Assessment (dNBR)}
+    \begin{columns}[T]
+        \begin{column}{0.55\textwidth}
+            \centering
+            \includegraphics[height=0.55\textheight]{plots_presentation/slide10_dnbr_severity.png}
+        \end{column}
+        
+        \begin{column}{0.43\textwidth}
+            \textbf{USGS Classification:}
+            \vspace{0.3cm}
+            
+            \small
+            \begin{tabular}{ll}
+                \toprule
+                \textbf{dNBR} & \textbf{Severity} \\
+                \midrule
+                > 0.66 & High \\
+                0.44 - 0.66 & Mod-High \\
+                0.27 - 0.44 & Mod-Low \\
+                0.1 - 0.27 & Low \\
+                < 0.1 & Unburned \\
+                \bottomrule
+            \end{tabular}
+            
+            \vspace{0.5cm}
+            \scriptsize{dNBR = NBR(Sep 2017) - NBR(Oct 2018)}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{NDVI Temporal Changes}
+    \centering
+    \includegraphics[height=0.70\textheight]{plots_presentation/slide11_ndvi_differences.png}
+    
+    \vspace{0.3cm}
+    \small{
+        \textbf{Left:} Fire Impact (Sep 2017 - Oct 2018) -- vegetation loss \\
+        \textbf{Right:} Total Recovery (May 2025 - Oct 2018) -- vegetation regrowth
+    }
+\end{frame}
+
+\begin{frame}{Land Cover Classification}
+    \centering
+    \includegraphics[height=0.75\textheight]{plots_presentation/slide12_classifications.png}
+    
+    \vspace{0.3cm}
+    \tiny{Unsupervised classification (k-means) into 3 spectral classes.}
+\end{frame}
+
+\begin{frame}[fragile]{Classification - R Implementation}
+    
+    \textbf{Unsupervised classification using RStoolbox:}
+    
+    \vspace{0.3cm}
+    
+    \begin{lstlisting}
+# Perform k-means clustering into 3 classes
+class_set2017 <- unsuperClass(carrfire_set2017, 
+                               nClasses=3)
+
+# Calculate pixel frequencies
+freq_set2017 <- freq(class_set2017$map)
+
+# Convert to percentages
+total_pixels <- ncell(class_set2017$map)
+percentages <- freq_set2017 * 100 / total_pixels
+    \end{lstlisting}
+    
+    \vspace{0.3cm}
+    \small{This code classifies pixels based on spectral similarity.}
+    
+\end{frame}
+
+\section{Results - Quantitative Analysis}
+
+\begin{frame}{Vegetation Cover Temporal Analysis}
+    \begin{columns}[T]
+        \begin{column}{0.55\textwidth}
+            \centering
+            \includegraphics[height=0.6\textheight]{plots_presentation/slide13_grouped_barchart.png}
+        \end{column}
+        
+        \begin{column}{0.43\textwidth}
+            \scriptsize
+            \begin{tabular}{lccc}
+                \toprule
+                \textbf{Date} & \textbf{Hlth} & \textbf{Sprs} & \textbf{Brnd} \\
+                & \textbf{(\%)} & \textbf{(\%)} & \textbf{(\%)} \\
+                \midrule
+                Sep 2017 & 2.2 & 37.6 & 60.2 \\
+                Jul 2018 & 7.3 & 36.4 & 56.3 \\
+                \rowcolor{red!20}
+                \textbf{Oct 2018} & \textbf{1.9} & \textbf{28.6} & \textbf{69.5} \\
+                Jun 2019 & 5.4 & 40.7 & 53.8 \\
+                May 2025 & 3.5 & 44.3 & 52.2 \\
+                \bottomrule
+            \end{tabular}
+            
+            \vspace{0.4cm}
+            \scriptsize{
+                Healthy (NDVI > 0.4) \\
+                Sparse (0.2 < NDVI ≤ 0.4) \\
+                Burned (NDVI ≤ 0.2)
+            }
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Vegetation Recovery Trajectory}
+    \begin{columns}[T]
+        \begin{column}{0.52\textwidth}
+            \centering
+            \includegraphics[height=0.62\textheight]{plots_presentation/slide14_line_trend.png}
+        \end{column}
+        
+        \begin{column}{0.43\textwidth}
+            \textbf{Key Findings:}
+            \begin{itemize}
+                \small
+                \item Post-fire minimum: Oct 2018 (30.5\% vegetation)
+                \item 1-year recovery: Jun 2019 (+16.4\%)
+                \item 7-year recovery: May 2025 (47.8\%)
+                \item \textbf{Recovery rate: 56.7\%} from post-fire minimum
+                \item Not returned to pre-fire levels (Jul 2018: 43.7\%)
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Quantification - R Code}
+    
+    \textbf{Calculating vegetation percentages based on NDVI thresholds:}
+    
+    \begin{lstlisting}
+# Define function for NDVI-based classification
+calc_veg_perc <- function(ndvi_layer) {
+  healthy <- sum(values(ndvi_layer) > 0.4, na.rm=TRUE)
+  sparse <- sum(values(ndvi_layer) > 0.2 & 
+                values(ndvi_layer) <= 0.4, na.rm=TRUE)
+  burned <- sum(values(ndvi_layer) <= 0.2, na.rm=TRUE)
+  
+  total <- healthy + sparse + burned
+  
+  return(data.frame(
+    Healthy = (healthy/total) * 100,
+    Sparse = (sparse/total) * 100,
+    Burned = (burned/total) * 100
+  ))
+}
+    \end{lstlisting}
+    
+\end{frame}
+
+\begin{frame}{Landscape Heterogeneity Analysis (PCA)}
+    \begin{columns}[T]
+        \begin{column}{0.58\textwidth}
+            \centering
+            \includegraphics[height=0.58\textheight]{plots_presentation/slide15_pca_variability.png}
+                        
+            \vspace{0.2cm}
+            \tiny{Standard deviation of PC1 using 3×3 moving window. Yellow = high variability, Purple = low variability.}
+        \end{column}
+        
+        \begin{column}{0.38\textwidth}
+            \textbf{PCA Results:}
+            \vspace{0.2cm}
+            
+            \small
+            \begin{itemize}
+                \item Sep 2017: PC1 explains \textbf{87.6\%} of variance
+                \item Oct 2018: PC1 explains \textbf{85.5\%} (increased heterogeneity)
+                \item May 2025: PC1 explains \textbf{87.5\%} (recovering)
+            \end{itemize}
+            
+            \vspace{0.3cm}
+            \scriptsize{Fire created heterogeneous landscape mosaic with varying burn severities.}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{PCA Analysis - R Implementation}
+    
+    \textbf{Principal Component Analysis and variability:}
+    
+    \begin{lstlisting}
+# Resample for faster processing
+carrfire_res <- aggregate(carrfire_set2017, fact=10)
+
+# Perform PCA
+pca_result <- rasterPCA(carrfire_res)
+
+# Extract PC1 (first principal component)
+pc1 <- pca_result$map$PC1
+
+# Calculate spatial variability using moving window
+sd_pc1 <- focal(pc1, matrix(1/9, 3, 3), fun=sd)
+
+# Visualize
+plot(sd_pc1, col=viridis(100, option="B"))
+    \end{lstlisting}
+    
+    \small{This reveals spatial heterogeneity caused by fire.}
+    
+\end{frame}
+
+\section{Conclusions}
+
+\begin{frame}{Key Findings}
+    
+    \begin{block}{1. Fire Impact}
+        \begin{itemize}
+            \item Immediate vegetation loss: burned/bare soil increased from 60.2\% to 69.5\%
+            \item dNBR analysis revealed moderate to high burn severity in affected areas
+        \end{itemize}
+    \end{block}
+    
+    \begin{block}{2. Recovery Process}
+        \begin{itemize}
+            \item Recovery began within first year: sparse vegetation increased to 40.7\%
+            \item Long-term recovery ongoing: by May 2025, sparse vegetation reached 44.3\%
+            \item \textbf{Recovery rate: 56.7\% improvement} from post-fire minimum
+            \item Area has NOT fully returned to pre-fire conditions after 7 years
+        \end{itemize}
+    \end{block}
+    
+\end{frame}
+
+\begin{frame}{Methodological and Ecological Insights}
+    
+    \begin{block}{3. Methodological Insights}
+        \begin{itemize}
+            \item NBR and dNBR proved effective for burn severity assessment
+            \item Multi-temporal NDVI analysis clearly tracked recovery trajectory
+            \item PCA variability analysis revealed changing landscape heterogeneity
+        \end{itemize}
+    \end{block}
+    
+    \begin{block}{4. Ecological Implications}
+        \begin{itemize}
+           \item Vegetation recovery is a slow, long-term process ($>$ 7 years)
+            \item Fire created heterogeneous landscape mosaic
+            \item Remote sensing enables effective monitoring at landscape scale
+        \end{itemize}
+    \end{block}
+    
+\end{frame}
+
+\begin{frame}{R Packages - Why These Choices?}
+    
+    \begin{description}
+        \item[\texttt{terra}] Modern, efficient raster package. Replaced older \texttt{raster} package. Essential for large Landsat datasets. Key functions: \texttt{rast()}, \texttt{resample()}, raster algebra.
+        
+        \item[\texttt{RStoolbox}] Specialized for remote sensing analysis. Provides \texttt{unsuperClass()} for unsupervised classification and \texttt{rasterPCA()} for principal component analysis.
+        
+        \item[\texttt{viridis}] Perceptually uniform, colorblind-friendly palettes. Essential for scientific visualization. Used throughout for consistency.
+        
+        \item[\texttt{ggplot2}] Publication-quality graphics. Flexible grammar of graphics approach. Used for temporal trend analysis.
+    \end{description}
+    
+\end{frame}
+
+\begin{frame}{Conclusions}
+    
+    \textbf{Main contributions of this work:}
+    
+    \begin{enumerate}
+        \item Comprehensive multi-temporal analysis spanning 8 years
+        \item Integration of multiple spectral indices (NDVI, NBR, dNBR)
+        \item Quantitative assessment of recovery trajectory
+        \item Demonstration of remote sensing effectiveness for fire monitoring
+    \end{enumerate}
+    
+    \vspace{0.5cm}
+    
+    \textbf{Future perspectives:}
+    \begin{itemize}
+        \item Continue monitoring recovery beyond 2025
+        \item Compare with other fire events in similar ecosystems
+        \item Integrate with field validation data
+    \end{itemize}
+    
+\end{frame}
+
+\begin{frame}[plain]
+    \centering
+    \Huge{Thank you for your attention!}
+\end{frame}
+
+\end{document}
