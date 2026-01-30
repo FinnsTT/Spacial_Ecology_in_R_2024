@@ -223,11 +223,11 @@ ndvi_diff <- ndvi_set2017 - ndvi_ott2018_res
                 \toprule
                 \textbf{dNBR} & \textbf{Severity} \\
                 \midrule
-                > 0.66 & High \\
+                $>$ 0.66 & High \\
                 0.44 - 0.66 & Mod-High \\
                 0.27 - 0.44 & Mod-Low \\
                 0.1 - 0.27 & Low \\
-                < 0.1 & Unburned \\
+                $<$ 0.1 & Unburned \\
                 \bottomrule
             \end{tabular}
             
@@ -307,9 +307,9 @@ percentages <- freq_set2017 * 100 / total_pixels
             
             \vspace{0.4cm}
             \scriptsize{
-                Healthy (NDVI > 0.4) \\
-                Sparse (0.2 < NDVI ≤ 0.4) \\
-                Burned (NDVI ≤ 0.2)
+                Healthy (NDVI $>$ 0.4) \\
+                Sparse (0.2 $<$ NDVI $≤$ 0.4) \\
+                Burned (NDVI $≤$ 0.2)
             }
         \end{column}
     \end{columns}
@@ -362,29 +362,33 @@ calc_veg_perc <- function(ndvi_layer) {
 
 \begin{frame}{Landscape Heterogeneity Analysis (PCA)}
     \begin{columns}[T]
-        \begin{column}{0.58\textwidth}
+        \begin{column}{0.65\textwidth}
             \centering
-            \includegraphics[height=0.58\textheight]{plots_presentation/slide15_pca_variability.png}
-                        
-            \vspace{0.2cm}
-            \tiny{Standard deviation of PC1 using 3×3 moving window. Yellow = high variability, Purple = low variability.}
+            \includegraphics[width=\textwidth]{plots_presentation/slide15_pca_variability.png}
         \end{column}
         
-        \begin{column}{0.38\textwidth}
-            \textbf{PCA Results:}
-            \vspace{0.2cm}
-            
-            \small
+        \begin{column}{0.33\textwidth}
+            \scriptsize
+            \textbf{PC1 Variance:}
             \begin{itemize}
-                \item Sep 2017: PC1 explains \textbf{87.6\%} of variance
-                \item Oct 2018: PC1 explains \textbf{85.5\%} (increased heterogeneity)
-                \item May 2025: PC1 explains \textbf{87.5\%} (recovering)
+                \item Sep 2017: \textbf{87.6\%}
+                \item Oct 2018: \textbf{85.5\%} 
+                \item May 2025: \textbf{87.5\%}
             \end{itemize}
             
             \vspace{0.3cm}
-            \scriptsize{Fire created heterogeneous landscape mosaic with varying burn severities.}
+            
+            \textbf{Interpretation:}
+            \begin{itemize}
+                \item Yellow = high variability
+                \item Purple = low variability
+                \item Fire created heterogeneous mosaic
+            \end{itemize}
         \end{column}
     \end{columns}
+    
+    \vspace{0.2cm}
+    \tiny{Standard deviation of PC1 using 3×3 moving window.}
 \end{frame}
 
 \begin{frame}[fragile]{PCA Analysis - R Implementation}
@@ -480,14 +484,7 @@ plot(sd_pc1, col=viridis(100, option="B"))
     \end{enumerate}
     
     \vspace{0.5cm}
-    
-    \textbf{Future perspectives:}
-    \begin{itemize}
-        \item Continue monitoring recovery beyond 2025
-        \item Compare with other fire events in similar ecosystems
-        \item Integrate with field validation data
-    \end{itemize}
-    
+        
 \end{frame}
 
 \begin{frame}[plain]
