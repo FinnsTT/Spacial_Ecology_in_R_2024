@@ -404,7 +404,7 @@
  veg_perc_giu2019
  veg_perc_mag2025
  
- # 12.1 CALCULATE RECOVERY RATE
+ # 13 CALCULATE RECOVERY RATE
  
  # Calculate total vegetation (healthy + sparse) for each date
  total_veg_set2017 <- veg_perc_set2017$Healthy + veg_perc_set2017$Sparse
@@ -436,7 +436,7 @@
  
  View(recovery_summary)
  
-  # 13. CREATE DATAFRAMES AND PLOTS WITH GGPLOT2
+ # 15. CREATE DATAFRAMES AND PLOTS WITH GGPLOT2
  
  # Create dataframe with vegetation percentages for all dates
  # This will be used for plotting temporal trends
@@ -571,7 +571,14 @@
    ) +
    ylim(0, 100)
  
- # 14. PCA ANALYSIS AND VARIABILITY (OPTIONAL BUT IMPRESSIVE)
+ # 14 FIX CHRONOLOGICAL ORDER FOR GGPLOT
+ 
+ # Convert Year to factor with correct chronological order
+ veg_temporal_long$Year <- factor(veg_temporal_long$Year, 
+                                  levels = c("Sep 2017", "Jul 2018", "Oct 2018", 
+                                             "Jun 2019", "May 2025"))
+ 
+ # 16. PCA ANALYSIS AND VARIABILITY (OPTIONAL BUT IMPRESSIVE)
  
  # Principal Component Analysis reduces multispectral data to main components
  # PC1 typically explains most of the variance in the system
@@ -639,7 +646,7 @@
  # Interpretation of variability maps:
  # - Pre-fire: moderate variability at vegetation-urban boundaries
  
- # 15. EXPORT ALL PLOTS FOR PRESENTATION
+ # 17. EXPORT ALL PLOTS FOR PRESENTATION
  
  # Create folder for saving plots
  dir.create("plots_presentation", showWarnings = FALSE)
